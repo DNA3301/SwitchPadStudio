@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+build/
+dist/
+release/
+*.spec
+*.exe
+*.log
+*.tmp
+.env
+.env.*
+settings.json
+SWITCHPAD_DIAGNOSTICA_*.txt
+.pytest_cache/

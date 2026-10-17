@@ -1,0 +1,5 @@
+# Core Windows app dependencies. Tested against the documented public APIs.
+pygame==2.6.1
+vgamepad==0.1.0
+pystray==0.19.5
+Pillow>=10.4,<13
