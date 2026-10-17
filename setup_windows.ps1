@@ -1,6 +1,6 @@
 # SwitchPad Studio: user-level Python environment + optional Windows EXE build.
 [CmdletBinding()]
-param([switch]$BuildExe)
+param([switch]$BuildExe, [switch]$NoLaunch)
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location -LiteralPath $Root
@@ -35,7 +35,7 @@ function Resolve-Python {
 
 Write-Host ''
 Write-Host '=========================================' -ForegroundColor Cyan
-Write-Host '      SWITCHPAD STUDIO 3.0 - WINDOWS' -ForegroundColor Cyan
+Write-Host '      SWITCHPAD STUDIO 4.0 - WINDOWS' -ForegroundColor Cyan
 Write-Host '=========================================' -ForegroundColor Cyan
 Write-Host ''
 
@@ -65,22 +65,35 @@ if (-not (Test-Path -LiteralPath $venvpython)) {
     if ($LASTEXITCODE -ne 0) { throw 'Creazione ambiente Python fallita.' }
 }
 
-$env:VGAMEPAD_SKIP_VIGEMBUS_INSTALL = 'true'
-# The driver is NEVER silently installed by vgamepad/setup.py.
+# Never execute upstream vgamepad/setup.py: it invokes an obsolete driver MSI.
+& $venvpython (Join-Path $Root 'tools\safe_vgamepad.py')
+if ($LASTEXITCODE -ne 0) { throw 'Preparazione sicura di vgamepad fallita. Nessun driver e stato installato.' }
 Write-Host 'Installo le librerie dell''app (pygame, vgamepad, tray icon)...' -ForegroundColor Cyan
 & $venvpython -m pip install --disable-pip-version-check --no-input -r (Join-Path $Root 'requirements.txt')
 if ($LASTEXITCODE -ne 0) { throw 'Installazione dipendenze fallita. Controlla la connessione Internet e riprova.' }
-Set-Content -LiteralPath (Join-Path $venv 'switchpad-installed.ok') -Value '3.0.0' -Encoding Ascii
+Set-Content -LiteralPath (Join-Path $venv 'switchpad-installed.ok') -Value '4.0.0' -Encoding Ascii
 
 if ($BuildExe) {
     Write-Host 'Compilazione eseguibile Windows x64 in corso...' -ForegroundColor Cyan
     & $venvpython -m pip install --disable-pip-version-check --no-input -r (Join-Path $Root 'requirements-build.txt')
     if ($LASTEXITCODE -ne 0) { throw 'Installazione PyInstaller fallita.' }
-    # PyInstaller discovers pygame SDL DLL and bundled ViGEmClient DLL via collect-all.
-    & $venvpython -m PyInstaller --noconfirm --clean --onefile --windowed --name SwitchPadStudio `
-      --icon (Join-Path $Root 'assets\switchpad.ico') `
-      --collect-all pygame --collect-all vgamepad --collect-all pystray --collect-all PIL `
-      --paths $Root (Join-Path $Root 'main.py')
+    # Bundle only runtime ViGEmClient DLLs; never the obsolete driver MSI files.
+    $buildOriginalPath = $env:PATH
+    try {
+      # Prevent unrelated applications' codec DLLs on PATH leaking into the bundle.
+      $env:PATH = (Join-Path $env:SystemRoot 'System32') + ';' + $env:SystemRoot + ';' + (Split-Path -Parent $venvpython)
+      & $venvpython -m PyInstaller --noconfirm --clean --onefile --windowed --name SwitchPadStudio `
+        --icon (Join-Path $Root 'assets\switchpad.ico') `
+        --additional-hooks-dir (Join-Path $Root 'tools\hooks') `
+        --exclude-module pygame.mixer --exclude-module pygame.mixer_music `
+        --exclude-module pygame.font --exclude-module pygame.freetype `
+        --exclude-module pygame._freetype --exclude-module pygame.imageext `
+        --exclude-module pygame.pypm --exclude-module pygame.midi `
+        --collect-binaries vgamepad --hidden-import pygame._sdl2.controller `
+        --hidden-import pystray._win32 --paths $Root (Join-Path $Root 'main.py')
+    } finally {
+      $env:PATH = $buildOriginalPath
+    }
     if ($LASTEXITCODE -ne 0) { throw 'Compilazione EXE fallita. Controlla gli errori precedenti.' }
     $exeSource = Join-Path $Root 'dist\SwitchPadStudio.exe'
     if (-not (Test-Path -LiteralPath $exeSource)) { throw 'EXE non trovato al termine del processo.' }
@@ -88,11 +101,13 @@ if ($BuildExe) {
     Write-Host ''
     Write-Host 'EXE GENERATO: SwitchPadStudio.exe' -ForegroundColor Green
     Write-Host 'Se ViGEmBus non e installato, usa il link ufficiale nella scheda Diagnostica.' -ForegroundColor Yellow
-    Start-Process -FilePath (Join-Path $Root 'SwitchPadStudio.exe') -WorkingDirectory $Root
-} else {
+    if (-not $NoLaunch) {
+        Start-Process -WindowStyle Hidden -FilePath (Join-Path $Root 'SwitchPadStudio.exe') -WorkingDirectory $Root
+    }
+} elseif (-not $NoLaunch) {
     Write-Host 'Apro interfaccia SwitchPad Studio...' -ForegroundColor Green
     $pythonw = Join-Path $venv 'Scripts\pythonw.exe'
     if (-not (Test-Path -LiteralPath $pythonw)) { $pythonw = $venvpython }
-    Start-Process -FilePath $pythonw -ArgumentList ('"' + (Join-Path $Root 'main.py') + '"') -WorkingDirectory $Root
+    Start-Process -WindowStyle Hidden -FilePath $pythonw -ArgumentList ('"' + (Join-Path $Root 'main.py') + '"') -WorkingDirectory $Root
     Write-Host 'Se manca il driver Xbox virtuale, la GUI ti mostrera come installarlo.' -ForegroundColor Yellow
 }

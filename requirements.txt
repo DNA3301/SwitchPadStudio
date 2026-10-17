@@ -1,5 +1,7 @@
 # Core Windows app dependencies. Tested against the documented public APIs.
+--only-binary=:all:
 pygame==2.6.1
 vgamepad==0.1.0
 pystray==0.19.5
-Pillow>=10.4,<13
+Pillow==12.3.0
+six==1.17.0

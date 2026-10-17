@@ -32,7 +32,7 @@ def start_logging():
     logging.basicConfig(filename=str(log), level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
                         encoding="utf-8")
-    logging.info("Starting SwitchPad Studio v3.0.0")
+    logging.info("Starting SwitchPad Studio v4.0.0")
 
 
 def windows_single_instance():
@@ -52,6 +52,10 @@ def windows_single_instance():
 
 
 def main():
+    if len(sys.argv) == 3 and sys.argv[1] == "--verify-install":
+        from switchpad.verification import verify_install
+        verify_install(Path(sys.argv[2]))
+        return
     start_logging()
     mutex = windows_single_instance()
     if mutex is False:

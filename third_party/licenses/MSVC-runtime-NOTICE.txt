@@ -1,0 +1,9 @@
+Microsoft Visual C++ runtime components redistributed with CPython for Windows.
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+These components retain Microsoft's applicable redistribution terms.
+They are not covered by the application's or the Python libraries' licenses.
+
+CPython Windows distribution and sources:
+https://www.python.org/downloads/release/python-3124/
+https://github.com/python/cpython/tree/v3.12.4/PCbuild

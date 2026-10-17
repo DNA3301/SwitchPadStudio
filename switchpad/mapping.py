@@ -53,7 +53,8 @@ def radial_deadzone(x: float, y: float, threshold: float) -> tuple[float, float]
 
 def translate(state: PadState, deadzone: float = 0.12, nintendo_letters: bool = False,
               invert_lx: bool = False, invert_ly: bool = False,
-              invert_rx: bool = False, invert_ry: bool = False) -> PadState:
+              invert_rx: bool = False, invert_ry: bool = False,
+              button_remap: dict | None = None) -> PadState:
     lx, ly = radial_deadzone(-state.lx if invert_lx else state.lx,
                               -state.ly if invert_ly else state.ly, deadzone)
     rx, ry = radial_deadzone(-state.rx if invert_rx else state.rx,
@@ -64,6 +65,9 @@ def translate(state: PadState, deadzone: float = 0.12, nintendo_letters: bool = 
         # Nintendo LABELS are the opposite face-button pairing.
         remap = {"A": "B", "B": "A", "X": "Y", "Y": "X"}
         buttons = {remap.get(key, key) for key in buttons}
+    if button_remap:
+        buttons = {button_remap.get(key, key) for key in buttons}
+        buttons.discard("DISABLED")
     return PadState(buttons=frozenset(buttons), lx=lx, ly=ly, rx=rx, ry=ry,
                     lt=clamp(state.lt, 0.0, 1.0), rt=clamp(state.rt, 0.0, 1.0))
 

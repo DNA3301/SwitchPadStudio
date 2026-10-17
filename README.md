@@ -1,91 +1,77 @@
-# SWITCHPAD STUDIO 3.0 — Controller Nintendo Switch -> Xbox per Windows
+# SwitchPad Studio 4.0
 
-**Una vera applicazione desktop con interfaccia grafica.** Legge il controller Switch, converte in tempo reale pulsanti e assi e pubblica un *Xbox 360 controller virtuale* (XInput) sul PC. Rimane attiva in background durante il gioco, anche dopo aver chiuso la finestra nell'area di notifica.
+Un ponte per usare i controller su **Windows 10/11 x64**: legge un pad USB o Bluetooth e lo presenta ai giochi come un **Xbox 360 virtuale (XInput)**. Include test degli input, rimappatura, correzione del drift e profili salvati per modello. Interfaccia in italiano; un controller sorgente alla volta.
 
-Questa versione **sostituisce SwitchPadHelper 2.0**, che eseguiva soltanto diagnostica / apertura di software esterni. Non serve più utilizzare BetterJoy come motore di traduzione: SDL/pygame legge il pad; vgamepad/ViGEmBus emula Xbox.
+**Compatibilità estesa, non una garanzia per ogni pad esistente.** Il controller deve essere leggibile da Windows e SDL2. Protocolli proprietari, driver mancanti, guasti hardware e alcuni modelli recenti richiedono supporto specifico. Le prove software completate sono descritte in [TEST_REPORT.md](TEST_REPORT.md); le famiglie nella tabella non sono tutte collaudate fisicamente.
 
-## LA VIA PIÙ SEMPLICE (Windows 10/11, 64 bit)
+## Download e avvio
 
-1. **Chiudi CONTROL Resonant** (e BetterJoy, DS4Windows o altri mapper se li stai usando sullo stesso pad).
-2. Estrai **tutto** lo ZIP in una cartella, ad esempio `C:\SwitchPadStudio`.
-3. Collega e abbina il pad Switch tramite Bluetooth, oppure con un cavo USB per **dati**. Per i Joy-Con, abbina entrambi i controller.
-4. Fai doppio clic su **`AVVIA_SWITCHPAD.cmd`**. Alla prima esecuzione il programma prepara automaticamente Python e le dipendenze con pip (richiede Internet); non occorre compilare né scrivere codice.
-5. **Una volta soltanto:** se l'app mostra `Driver ViGEmBus mancante/non operativo`, installa il driver **dalla release ufficiale**: <https://github.com/nefarius/ViGEmBus/releases/tag/v1.22.0>. Esegui l'installer appropriato, accetta l'avviso UAC e riavvia Windows se richiesto. L'app **non** installa driver in background, per scelta di sicurezza. Questo driver è dismesso; leggi le avvertenze in fondo.
-6. Riapri `AVVIA_SWITCHPAD.cmd`. Seleziona **Automatico — primo controller Switch**; l'emulazione parte da sola. Aspetta l'indicazione **XINPUT ATTIVO** (verde).
-7. Premi **Test Windows** (`joy.cpl`): deve esserci anche un controller Xbox 360 virtuale. Controlla i pulsanti e gli stick nell'interfaccia dell'app.
-8. **Solo ora apri CONTROL Resonant.** Lascia l'app attiva (puoi ridurla a icona nel tray). Se il gioco è lanciato da Steam ed esegue già la conversione, prova a *disabilitare Steam Input per questo gioco* per evitare due traduttori concorrenti.
+1. Scarica il pacchetto Windows dalla pagina [Releases](https://github.com/DNA3301/SwitchPadStudio/releases), estrailo e avvia `SwitchPadStudio.exe`. Non occorre installare Python. L'eseguibile non è firmato digitalmente.
+2. Collega il pad con un cavo dati oppure abbinalo nelle impostazioni Bluetooth di Windows.
+3. Se manca **ViGEmBus**, usa il collegamento nella scheda **Diagnostica** alla [release ufficiale 1.22.0](https://github.com/nefarius/ViGEmBus/releases/tag/v1.22.0). Il driver viene installato separatamente, con il consenso dell'utente. Riavvia se richiesto.
+4. Lascia **Automatico — primo controller disponibile**, oppure scegli il dispositivo dall'elenco. La modalità automatica preferisce un pad con mappatura SDL e mantiene quello attivo finché rimane collegato.
+5. Aspetta **XINPUT ATTIVO**, verifica l'anteprima e apri **Test Windows** (`joy.cpl`). Avvia quindi il gioco e lascia l'app aperta, anche nell'area di notifica.
 
-**Dall'esecuzione successiva basta fare doppio clic su `AVVIA_SWITCHPAD.cmd`**. Se hai compilato l'eseguibile, puoi invece aprire direttamente `SwitchPadStudio.exe`.
+Se usi i sorgenti, scarica il repository come ZIP, estrailo e fai doppio clic su `AVVIA_SWITCHPAD.cmd`. Il primo avvio prepara Python 3.12 e le librerie in `.venv` e richiede Internet. Il setup ripacchetta vgamepad da un archivio ufficiale verificato tramite SHA256 senza eseguirne lo script driver; non usare un'installazione sorgenti diretta di vgamepad in alternativa. Puoi compilare l'EXE con `COMPILA_EXE_WINDOWS.cmd`.
 
-### Come creare un unico vero `.exe` Windows
+**ViGEmBus è un progetto ritirato.** Valuta la [dichiarazione ufficiale di fine supporto](https://docs.nefarius.at/projects/ViGEm/End-of-Life/) prima di installarlo. L'app non installa driver in background. Senza il driver, lettura e diagnostica restano utilizzabili; l'uscita Xbox richiede il driver operativo e uno slot XInput libero (massimo quattro slot nel sistema).
 
-Fai doppio clic su **`COMPILA_EXE_WINDOWS.cmd`**. Lo script prepara un ambiente isolato, scarica PyInstaller e compila l'app **sul tuo PC Windows** in `SwitchPadStudio.exe`. Il file creato si può lanciare direttamente, senza Python installato. Con l'EXE è disponibile anche la funzione *Avvia con Windows* nella scheda Diagnostica.
+## Quali controller può leggere
 
-**Nota:** questo archivio **non contiene un EXE precompilato**: l'ambiente usato per generare il pacchetto era Linux, senza SDK/build Windows e senza accesso Internet per scaricare il runtime Windows. Non sarebbe corretto spacciarti per collaudato un file che non è stato compilato ed eseguito su Windows. Il compilatore Windows è incluso e automatizzato; necessita di Internet la prima volta.
+| Famiglia | Percorso disponibile |
+| --- | --- |
+| Xbox 360, Xbox One, Xbox Series, pad XInput | Mappatura SDL quando il driver Windows li espone; i pad Xbox fisici non sono esclusi per nome o VID/PID |
+| DualShock 4, DualSense e pad compatibili PlayStation | Mappatura SDL quando supportata via USB/Bluetooth; in alternativa profilo RAW |
+| Switch Pro, Joy-Con originali | SDL HIDAPI, inclusa combinazione Joy-Con quando disponibile |
+| 8BitDo, Logitech, HORI, PowerA e altri | Mappatura SDL se disponibile nella modalità selezionata sul pad, oppure configurazione RAW |
+| Pad USB generici / joystick DirectInput | Configurazione RAW di tasti, stick, D-pad e trigger quando SDL espone gli input |
+| PS3, Switch 2, dispositivi proprietari o adattatori particolari | Supporto condizionato a driver/protocollo e SDL; nessuna promessa di compatibilità automatica |
 
-### Che cosa fa realmente
+Non sono implementati giroscopio, touchpad, adaptive trigger, NFC, macro, conversione tastiera/mouse o riparazione dei driver del pad. La vibrazione dipende dal dispositivo e dal backend SDL. Il sistema operativo deve già riuscire a comunicare con la periferica.
 
-- **Input fisico:** `pygame._sdl2.controller` (SDL2 / HIDAPI), con modalità RAW configurabile per controller non riconosciuti come GameController.
-- **Xbox virtuale:** `vgamepad.VX360Gamepad` tramite driver Windows **ViGEmBus**. Il controller virtuale rimane collegato mentre il motore è attivo e viene scollegato all'uscita.
-- **Aggiornamenti:** ciclo di lettura/invio a 120 Hz (obiettivo; l'effettiva frequenza dipende dal sistema).
-- **Hotplug:** ricerca periodica e riconnessione automatica dopo perdita/ritorno del pad. Mantiene la selezione del modello quando possibile.
-- **Sicurezza:** nessuna modifica alla memoria del gioco, nessuna iniezione di DLL nel gioco, nessun driver nascosto e nessun input sintetico da tastiera. In caso di disconnessione azzera/rimuove il gamepad virtuale.
-- **Configurazione:** deadzone radiale degli stick, layout ABXY in modalità Xbox/per posizione oppure Nintendo/per lettera, inversione assi, vibrazione dove supportata, mapping RAW personalizzato, avvio automatico Windows con EXE, icona tray.
-- **Diagnostica:** indicatori stick/pulsanti/trigger in tempo reale, informazioni SDL, rilevazione slot XInput, controllo driver dal registro (solo indicativo), export report e log.
-- **Dati:** impostazioni e log in `%APPDATA%\SwitchPadStudio\`.
+## Se il pad ha tasti o assi sbagliati
 
-## Pad supportati e limiti
+Apri **Profili e tasti**. Ogni modello ha un profilo identificato dal GUID SDL; USB e Bluetooth possono avere GUID diversi. Due pad identici condividono le impostazioni del modello, ma puoi scegliere separatamente l'istanza da usare.
 
-**Switch Pro Controller originale (prima generazione):** SDL2 supporta controller Switch via USB o Bluetooth sulle configurazioni compatibili. È l'obiettivo principale dell'app.
+- **Rimappatura logica:** scegli per ciascun tasto la destinazione Xbox, oppure `DISABLED`. Funziona sia con SDL sia con RAW. Su PlayStation, la posizione di Croce corrisponde normalmente ad A di Xbox; non servono etichette Nintendo.
+- **Drift e direzioni:** regola la deadzone o inverti gli assi. In RAW puoi acquisire il centro lasciando gli stick a riposo e premendo **Calibra centro stick a riposo**. Dopo un cambio degli indici, ripeti la calibrazione.
+- **Lettura RAW:** per un pad senza profilo SDL, o con profilo SDL errato, attiva **Usa lettura RAW**. Usa **Rileva** accanto a un comando, poi premi il tasto o muovi un solo asse. Il rilevamento mette temporaneamente in pausa l'uscita. Gli indici sono visibili anche in tempo reale; `-1` disattiva un'associazione.
+- **D-pad:** configura un hat, quattro pulsanti, oppure due assi. Per un hat basta rilevare una direzione. Gli assi D-pad considerano X positivo a destra e Y positivo in basso; se necessario puoi scambiare le direzioni con la rimappatura logica.
+- **Trigger:** scegli pulsanti digitali, assi `0 → 1`, `-1 → +1`, `+1 → -1`, oppure un asse condiviso. Nell'ultimo caso assegna lo stesso indice a LT e RT: positivo = LT, negativo = RT; l'hardware non permette di distinguere la pressione simultanea.
+- Premi **Salva mappatura RAW** per confermare gli indici e abilitare l'uscita. Un profilo RAW nuovo non invia comandi al gioco prima della conferma. Per Switch Pro originale è disponibile un preset da verificare e salvare.
+- **Esporta profilo / Importa profilo** permette di condividere una configurazione JSON. L'importazione riguarda il pad selezionato; un profilo RAW importato richiede una nuova conferma.
 
-**Joy-Con originali (L + R):** SDL2 include l'opzione HIDAPI di combinazione automatica come unico pad, impostata a `1`. L'effettiva disponibilità dipende da versione, firmware e modalità di collegamento; l'app non implementa un proprio protocollo Bluetooth.
+## Risoluzione dei problemi
 
-**Controller di terze parti (PowerA, 8BitDo, HORI, altri):** quando SDL offre un profilo GameController possono funzionare normalmente. Se SDL riconosce solo un joystick RAW puoi selezionarlo manualmente, leggere gli indici dei tasti nella scheda *Profili e tasti* e modificarne la mappatura. Per i trigger RAW puoi scegliere *Assi* o *Pulsanti*. Non si promette compatibilità per ogni clone/firmware.
+**Nessun pad nell'elenco:** controlla prima `joy.cpl`, cavo dati, associazione Bluetooth e driver del produttore. Premi **Rileva**. Se il dispositivo è nascosto con HidHide, autorizza anche l'eseguibile dell'app a leggerlo. Alcune modalità di un pad multipiattaforma producono protocolli diversi: prova la modalità Windows indicata dal produttore.
 
-**Nintendo Switch 2 Pro / Joy-Con 2:** questa versione **non garantisce** supporto. L'accesso Bluetooth e l'inizializzazione HID Switch 2 richiedono implementazioni specifiche che SDL2/pygame 2.6.1 può non includere. Il pad eventualmente visibile fra i dispositivi RAW non è una conferma che i suoi report siano leggibili o correttamente interpretabili.
+**Gli input reagiscono ma il gioco non risponde:** verifica **XINPUT ATTIVO** e il dispositivo Xbox in `joy.cpl`. Riavvia il gioco dopo l'attivazione. Controlla gli altri controller collegati e gli slot XInput.
 
-**Non implementati:** motion aiming/giroscopio, NFC, cattura, calibrazione IMU, riconoscimento batteria universale, mappature per ogni clone, combinazione proprietaria Joy-Con 2. L'HD rumble Switch non è equivalente alla normale vibrazione XInput; eventuale rumble supporta solo le funzioni consentite dal backend SDL.
+**Comandi doppi o menu instabili:** chiudi altri mapper attivi sullo stesso pad, come BetterJoy o DS4Windows. Se necessario disabilita Steam Input per il singolo gioco. Alcuni giochi leggono sia il pad fisico sia quello virtuale: l'opzione esterna [HidHide](https://docs.nefarius.at/projects/HidHide/Simple-Setup-Guide/) può nascondere il solo pad fisico ai giochi, lasciando questa app autorizzata a leggerlo. Il filtro interno dell'app evita di rileggere l'uscita virtuale, ma non nasconde il pad fisico ai giochi.
 
-## Risoluzione problemi specifici di CONTROL Resonant
+**Disconnessione:** l'uscita viene azzerata e rimossa, poi il programma cerca nuovamente il pad. La selezione manuale attende il modello scelto invece di prendere una periferica diversa. Alcuni giochi richiedono un riavvio dopo la riconnessione.
 
-**Windows vede il controller ma XINPUT non si accende:** leggi l'errore nell'app e vai in Diagnostica. Se manca ViGEmBus, installalo **solo dalla release ufficiale** e riavvia se necessario. Chiudi BetterJoy/DS4Windows per escludere conflitti. In `joy.cpl`, un pad Switch visibile non equivale a un Xbox virtuale funzionante.
+**La finestra non compare:** avvia `AVVIA_CONSOLE.cmd` o consulta `%APPDATA%\SwitchPadStudio\logs\session.log`. La chiusura può ridurre l'app nel tray: usa **Chiudi completamente** dall'icona per terminarla.
 
-**XINPUT ATTIVO ma il gioco non risponde:** *chiudi interamente il gioco*, assicurati che il virtuale sia già attivo in `joy.cpl`, poi riavvialo. Il gioco può enumerare i controller solo all'avvio; negli utenti con altri pad collegati gli slot XInput non sono necessariamente attribuibili in modo univoco. Verifica anche la modalità controller in gioco e Steam Input.
+## Dati e funzionamento
 
-**Tasti doppi o menu che impazziscono:** disattiva Steam Input **per il singolo gioco** quando usi questo mapper, e non tenere aperti altri mapper per lo stesso pad. Se il titolo continua a leggere il pad fisico insieme al virtuale, usa facoltativamente **HidHide** (driver di terzi), configurandolo per nascondere **solo il pad fisico** ai giochi e autorizzare `SwitchPadStudio.exe` a leggere quel pad. Non nascondere il dispositivo virtuale; non manipolare le periferiche globali alla cieca. Guida ufficiale: <https://docs.nefarius.at/projects/HidHide/Simple-Setup-Guide/>.
+Impostazioni e log restano in `%APPDATA%\SwitchPadStudio`. La migrazione delle impostazioni 3.x conserva le mappature RAW già salvate. Nessun account o servizio remoto è necessario durante l'utilizzo. Il setup dei sorgenti scarica le dipendenze; i pulsanti dei collegamenti aprono il browser. I report diagnostici vengono esportati solo su richiesta e possono contenere informazioni locali: esaminali prima di condividerli.
 
-**Gli stick reagiscono nell'app ma sembrano strani:** cambia *Deadzone* o *Inverti assi*. Con un clone RAW usa gli indici hardware mostrati in fondo alla scheda Profili. I trigger Switch Pro sono digitali, vengono convertiti in 0% / 100% dell'input Xbox.
+L'app usa SDL/pygame per leggere gli input e vgamepad/ViGEmClient per l'uscita. Non modifica la memoria dei giochi e non installa DLL nei giochi. L'obiettivo del ciclo è 120 Hz; non è una garanzia di latenza.
 
-**Il pad scompare dopo la sospensione/Bluetooth:** ricollegalo e aspetta la ricerca; se il gioco lo ignora nonostante la riconnessione, riavvia il gioco dopo aver ristabilito la connessione XInput.
+## Sviluppo e verifiche
 
-**L'app non apre la GUI:** esegui il file `AVVIA_CONSOLE.cmd` e leggi l'errore, oppure invia `%APPDATA%\SwitchPadStudio\logs\session.log`.
+Python x64 3.10–3.13; build verificata con 3.12.4. Comandi dalla cartella del progetto:
 
-## Sicurezza del driver legacy
+```powershell
+python -m unittest discover -s tests -v
+python -m compileall -q main.py switchpad tools tests
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup_windows.ps1 -BuildExe -NoLaunch
+.\SwitchPadStudio.exe --verify-install .\build\exe-verification.json
+```
 
-ViGEmBus è **ritirato dal 2023** e non riceve più aggiornamenti. La release ufficiale `v1.22.0` ha rimosso l'auto-updater; alcune vecchie installazioni con updater legacy hanno un potenziale rischio legato ai domini scaduti. Leggi la dichiarazione originale: <https://docs.nefarius.at/projects/ViGEm/End-of-Life/>. Il nostro programma **non** forza il download/avvio di alcun pacchetto driver e non cambia la configurazione di sistema in modo silenzioso. Puoi decidere di non installarlo; in questo caso puoi comunque vedere la diagnostica del pad ma **l'emulazione Xbox non funzionerà**.
+Il test `--verify-install` apre in memoria le tre schede, verifica SDL e il bridge di identità senza creare un output Xbox e senza salvare impostazioni. I test unitari non richiedono un pad o ViGEmBus. `python tools/windows_smoke.py` è una verifica **facoltativa** su Windows con driver già installato: crea un output temporaneo senza pressioni di tasti, ne verifica lo stato neutro e il filtro anti-feedback, poi lo rimuove. Non equivale a una prova con un controller fisico.
 
-## Stato di verifica
+Le dipendenze mantengono le rispettive licenze: [third_party/README.md](third_party/README.md). I sorgenti di questa applicazione permettono di ricompilare il pacchetto con librerie LGPL modificate; è consentita l'analisi necessaria a verificare tali modifiche, nei termini delle licenze delle librerie.
 
-- **16 test automatizzati superati** (conversione tasti e assi, deadzone, emulatore fittizio, on/off, impostazioni).
-- **Prova grafica completata** con Tkinter su display virtuale Linux (pannello, profili, diagnostica).
-- **Verifica sintattica Python completata.**
-- **NON collaudato su Windows fisico**: driver ViGEmBus, pacchettizzazione con PyInstaller, lettura reale Switch via USB/Bluetooth e ingresso dentro CONTROL Resonant devono essere verificati sul PC dell'utente. Non è possibile garantire che funzioni senza quella verifica.
-
-## File
-
-- `AVVIA_SWITCHPAD.cmd` — avvia l'app, effettuando il setup automatico solo al primo utilizzo.
-- `INSTALLA_E_AVVIA.cmd` — forza la reinstallazione/aggiornamento dipendenze.
-- `COMPILA_EXE_WINDOWS.cmd` — crea `SwitchPadStudio.exe` sul PC Windows.
-- `AVVIA_CONSOLE.cmd` — diagnostica errori di avvio.
-- `main.py`, `switchpad/*.py` — codice completo dell'app.
-- `requirements.txt`, `requirements-build.txt` — dipendenze dichiarate.
-- `assets/switchpad.ico` — icona applicazione.
-- `tests/*.py` — verifiche riproducibili con `python -m unittest discover -s tests -v`.
-
-Fonti tecniche primarie:
-- <https://www.pygame.org/docs/ref/sdl2_controller.html>
-- <https://wiki.libsdl.org/SDL2/SDL_HINT_JOYSTICK_HIDAPI_COMBINE_JOY_CONS>
-- <https://github.com/yannbouteiller/vgamepad>
-- <https://github.com/nefarius/ViGEmBus/releases/tag/v1.22.0>
-- <https://docs.nefarius.at/projects/ViGEm/End-of-Life/>
-- <https://store.steampowered.com/app/3669870/CONTROL_Resonant/>
+Riferimenti tecnici: [pygame Controller](https://www.pygame.org/docs/ref/sdl2_controller.html), [SDL Joystick](https://wiki.libsdl.org/SDL2/CategoryJoystick), [vgamepad](https://github.com/yannbouteiller/vgamepad), [ViGEmClient](https://github.com/nefarius/ViGEmClient).

@@ -47,7 +47,8 @@ class MockVirtual:
 class EngineTests(unittest.TestCase):
     def test_switch_detection_and_virtual_exclusion(self):
         self.assertEqual(classify('Pro Controller', 0,0),(False,True))
-        self.assertEqual(classify('Xbox 360 Controller', 0x45E,0x28E),(True,False))
+        self.assertEqual(classify('Xbox 360 Controller', 0x45E,0x28E),(False,False))
+        self.assertEqual(classify('ViGEm Virtual Controller', 0x45E,0x28E),(True,False))
         self.assertEqual(classify('Nintendo Switch 2 Pro', 0x57E,0x2069),(False,True))
     def test_raw_mapping(self):
         s=read_raw(MockJoy(),DEFAULT['raw'])
